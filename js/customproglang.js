@@ -9,6 +9,8 @@
 
 /**********
  * config */
+var MAX_IDEN_LEN = 16;
+var MAX_NUM_LEN = 300; //compiles to javascript so this is doable
 
 /*************
  * constants */
@@ -36,6 +38,7 @@ function initCustomProgLang() {
 		halt = false; //good to start
 		
 		getChar(); //start
+		skipWhite();
 		emit('s = [];'); //initialize the stack
 		
 		while (look !== '.' && !halt) {
@@ -50,9 +53,19 @@ function getChar() { if (halt) return;
 	idx += 1;
 }
 
+function skipWhite() {
+	while (isWhite(look)) {
+		getChar();
+	}
+}
+
 function match(c) { if (halt) return;
-	if (c === look) getChar();
-	else expected('"'+c+'"');
+	if (c !== look) {
+		expected('"'+c+'"');
+	} else {
+		getChar();
+		skipWhite();
+	}
 }
 
 function newLine() {
@@ -67,20 +80,28 @@ function getName() { if (halt) return;
 		expected('Name');
 		return;
 	}
-
-	var ret = look.toUpperCase();
-	getChar();
+	
+	var ret = '';
+	while (isAlNum(look) && ret.length < MAX_IDEN_LEN) {
+		ret += look.toUpperCase();
+		getChar();
+	}
+	skipWhite();
 	return ret;
 }
 
-function getNum() { if (halt) return;	
+function getNum() { if (halt) return;
 	if (!isDigit(look)) {
 		expected('Integer');
 		return;
 	}
-
-	var ret = look;
-	getChar();
+	
+	var ret = '';
+	while (isDigit(look) && ret.length < MAX_NUM_LEN) {
+		ret += look;
+		getChar();
+	}
+	skipWhite();
 	return ret;
 }
 
@@ -198,16 +219,16 @@ function emit(s) {
 	write(s, halt ? 'mistake' : 'code');
 }
 
-function error(s) {
+function error(s) { if (halt) return;
 	write('Error: '+s+'.', 'error');
 }
 
-function abort(s) {
+function abort(s) { if (halt) return;
 	error(s);
 	halt = true;
 }
 
-function expected(s) {
+function expected(s) { if (halt) return;
 	abort(s+' expected');
 }
 
@@ -221,6 +242,10 @@ function isDigit(d) {
 
 function isAlNum(c) {
 	return /[a-z0-9]/i.test(c);
+}
+
+function isWhite(c) {
+	return /[\t ]/.test(c);
 }
 
 function isAddop(o) {
