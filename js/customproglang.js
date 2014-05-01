@@ -37,9 +37,10 @@ function initCustomProgLang() {
 		
 		getChar(); //start
 		emit('s = [];'); //initialize the stack
-		assignment(); //get an assignment
-		if (look !== '\n') { //must end with a newline
-			expected('Newline');
+		
+		while (look !== '.' && !halt) {
+			assignment();
+			newLine();
 		}
 	});
 }
@@ -52,6 +53,13 @@ function getChar() { if (halt) return;
 function match(c) { if (halt) return;
 	if (c === look) getChar();
 	else expected('"'+c+'"');
+}
+
+function newLine() {
+	if (look === '\n') {
+		getChar();
+		console.log('yeah: '+look);
+	}
 }
 
 function getName() { if (halt) return;	
@@ -209,6 +217,10 @@ function isAlpha(c) {
 
 function isDigit(d) {
 	return /[0-9]/i.test(d);
+}
+
+function isAlNum(c) {
+	return /[a-z0-9]/i.test(c);
 }
 
 function isAddop(o) {
