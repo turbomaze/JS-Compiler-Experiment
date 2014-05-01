@@ -4,8 +4,33 @@
 		<meta charset="UTF-8">
 		<title>Custom Programming Language</title>
 		<script src="js/customproglang.js"></script>
+		<style>
+		textarea {
+			
+		}
+		ul#result {
+			list-style-type: none;
+		}
+		ul#result li {
+			padding-left: 0px;
+		}
+		ul#result li.error {
+			color: red;
+		}
+		ul#result li.mistake {
+			color: #BB0000;
+			padding-left: 24px;
+		}
+		ul#result li.code {
+			color: #0000BB;
+		}
+		</style>
 	</head>
 	<body>
-		
+		<textarea type="textarea" rows="12" cols="80" id="source"></textarea>
+		<br>
+		<input type="button" id="compile-btn" value="Compile"></input>
+		<br>
+		<ul id="result"></ul>
 	</body>
 </html>
