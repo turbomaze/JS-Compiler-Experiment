@@ -9,8 +9,8 @@
 
 /**********
  * config */
-var MAX_IDEN_LEN = 16;
-var MAX_NUM_LEN = 300; //compiles to javascript so this is doable
+var MAX_IDEN_LEN = 1;
+var MAX_NUM_LEN = 1; //compiles to javascript so this is doable
 
 /*************
  * constants */
@@ -38,13 +38,7 @@ function initCustomProgLang() {
 		halt = false; //good to start
 		
 		getChar(); //start
-		skipWhite();
-		emit('s = [];'); //initialize the stack
-		
-		while (look !== '.' && !halt) {
-			assignment();
-			newLine();
-		}
+		doProgram();
 	});
 }
 
@@ -54,7 +48,7 @@ function getChar() { if (halt) return;
 }
 
 function skipWhite() {
-	while (isWhite(look)) {
+	while (isWhite(look) && !halt) {
 		getChar();
 	}
 }
@@ -71,7 +65,6 @@ function match(c) { if (halt) return;
 function newLine() {
 	if (look === '\n') {
 		getChar();
-		console.log('yeah: '+look);
 	}
 }
 
@@ -82,7 +75,7 @@ function getName() { if (halt) return;
 	}
 	
 	var ret = '';
-	while (isAlNum(look) && ret.length < MAX_IDEN_LEN) {
+	while (isAlNum(look) && ret.length < MAX_IDEN_LEN && !halt) {
 		ret += look.toUpperCase();
 		getChar();
 	}
@@ -97,7 +90,7 @@ function getNum() { if (halt) return;
 	}
 	
 	var ret = '';
-	while (isDigit(look) && ret.length < MAX_NUM_LEN) {
+	while (isDigit(look) && ret.length < MAX_NUM_LEN && !halt) {
 		ret += look;
 		getChar();
 	}
@@ -110,9 +103,9 @@ function ident() { if (halt) return;
 	if (look === '(') {
 		match('(');
 		match(')');
-		emit('BSR '+name);
+		emitln('BSR '+name);
 	} else {
-		emit('D0 = '+getName()+';');
+		emitln('D0 = '+getName()+';');
 	}
 }
 
@@ -123,13 +116,13 @@ function factor() { if (halt) return;
 		match(')');
 	} else if (isAlpha(look)) {
 		ident();
-	} else emit('D0 = '+getNum()+';');
+	} else emitln('D0 = '+getNum()+';');
 }
 
 function term() { if (halt) return;
 	factor();
 	while (isMulop(look) && !halt) {
-		emit('s.push(D0);');
+		emitln('s.push(D0);');
 		switch(look) {
 			case '*': 
 				multiply(); 
@@ -147,36 +140,36 @@ function term() { if (halt) return;
 function add() { if (halt) return;
 	match('+');
 	term();
-	emit('D0 += s.pop();');
+	emitln('D0 += s.pop();');
 }
 
 function subtract() { if (halt) return;
 	match('-');
 	term();
-	emit('D0 = s.pop() - D0;');
+	emitln('D0 = s.pop() - D0;');
 }
 
 function multiply() { if (halt) return;
 	match('*');
 	factor();
-	emit('D0 *= s.pop();');
+	emitln('D0 *= s.pop();');
 }
 
 function divide() { if (halt) return;
 	match('/');
 	factor();
-	emit('D0 = s.pop()/D0;');
+	emitln('D0 = s.pop()/D0;');
 }
 
 function expression() { if (halt) return;
 	if (isAddop(look)) {
-		emit('D0 = 0;');
+		emitln('D0 = 0;');
 	} else {
 		term();
 	}
 	
 	while (isAddop(look) && !halt) {
-		emit('s.push(D0);');
+		emitln('s.push(D0);');
 		switch(look) {
 			case '+': 
 				add(); 
@@ -195,7 +188,53 @@ function assignment() {
 	var name = getName();
 	match('=');
 	expression();
-	emit(name+' = D0;');
+	emitln(name+' = D0;');
+}
+
+function other() {
+	emitln(getName());
+}
+
+function doProgram() {
+	emitln('s = [];'); //initialize the stack
+	block();
+	if (look !== 'e') {
+		expected('End');
+	} else {
+		emitln('//end of program');
+	}
+}
+
+function block() {
+	while (['e','l'].indexOf(look) == -1 && !halt) {
+		switch (look) {
+			case 'i':
+				doIf();
+				break;
+			default:
+				other();
+				break;
+		}
+	}
+}
+
+function doIf() {
+	match('i');
+	emitln('if (');
+	condition();
+	emit(') {');
+	block();
+	if (look === 'l') {
+		match('l');
+		emitln('} else {');
+		block();
+	}
+	emitln('}');
+	match('e');
+}
+
+function condition() {
+	emit('//handle condition');
 }
 
 /********************
@@ -208,19 +247,31 @@ function currentTimeMillis() {
 	return new Date().getTime();
 }
 
-function write(s, type) {
-	var li = document.createElement('li');
-	li.innerHTML = s;
-	li.className = type || '';
-	$s('result').appendChild(li);
+function write(s, type, line) {
+	type = type || '';
+	var span = document.createElement('span');
+	span.innerHTML = s;
+	span.className = type;
+	if (type.length > 0) {
+		$s('result').appendChild(span);
+	} else $s('result').innerHTML = $s('result').innerHTML+s;
+}
+
+function writeln(s, type) {
+	write('<br>');
+	write(s, type);
 }
 
 function emit(s) {
 	write(s, halt ? 'mistake' : 'code');
 }
 
+function emitln(s) {
+	writeln(s, halt ? 'mistake' : 'code');
+}
+
 function error(s) { if (halt) return;
-	write('Error: '+s+'.', 'error');
+	writeln('Error: '+s+'.', 'error');
 }
 
 function abort(s) { if (halt) return;
