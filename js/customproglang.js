@@ -4,7 +4,7 @@
 | @author Anthony    |
 | @version 0.1       |
 | @date 2014/04/30   |
-| @edit 2014/04/30   |
+| @edit 2014/05/01   |
 \********************/
 
 /**********
@@ -184,32 +184,36 @@ function expression() { if (halt) return;
 	}
 }
 
-function assignment() {
+function assignment() { if (halt) return;
 	var name = getName();
 	match('=');
 	expression();
 	emitln(name+' = D0;');
 }
 
-function other() {
+function other() { if (halt) return;
 	emitln(getName());
 }
 
-function doProgram() {
+function doProgram() { if (halt) return;
 	emitln('s = [];'); //initialize the stack
 	block();
 	if (look !== 'e') {
+	console.log(idx);
 		expected('End');
 	} else {
 		emitln('//end of program');
 	}
 }
 
-function block() {
+function block() { if (halt) return;
 	while (['e','l'].indexOf(look) == -1 && !halt) {
 		switch (look) {
 			case 'i':
 				doIf();
+				break;
+			case 'w':
+				doWhile();
 				break;
 			default:
 				other();
@@ -218,7 +222,7 @@ function block() {
 	}
 }
 
-function doIf() {
+function doIf() { if (halt) return;
 	match('i');
 	emitln('if (');
 	condition();
@@ -233,8 +237,18 @@ function doIf() {
 	match('e');
 }
 
-function condition() {
-	emit('//handle condition');
+function doWhile() { if (halt) return;
+	match('w');
+	emitln('while (');
+	condition();
+	emit(') {');
+	block();
+	emitln('}');
+	match('e'); //end while
+}
+
+function condition() { if (halt) return;
+	emit('/*handle condition*/');
 }
 
 /********************
