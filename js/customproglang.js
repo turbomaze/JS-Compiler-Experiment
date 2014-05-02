@@ -2,7 +2,7 @@
 | Custom Programming |
 |       Language     |
 | @author Anthony    |
-| @version 0.1       |
+| @version 0.2       |
 | @date 2014/04/30   |
 | @edit 2014/05/01   |
 \********************/
